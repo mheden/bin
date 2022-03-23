@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# prerequisites:
+# - fzf (https://github.com/junegunn/fzf.git)
+# - preview.sh (https://raw.githubusercontent.com/junegunn/fzf.vim/master/bin/preview.sh)
+# - rg (https://github.com/BurntSushi/ripgrep)
+#
+
+if [ -z "${NOTESPATH}" ]; then
+  echo Please set NOTESPATH
+  exit 1
+fi
+
+cd "${NOTESPATH}"
+SEARCH_RESPONSE="$(rg --passthrough --line-number "" | grep -v ":\s*$" | fzf --preview="preview.sh {}" --preview-window=right:50%:wrap)"
+SEARCH_EXITCODE=$?
+
+FILENAME=$(echo ${SEARCH_RESPONSE} | cut -d':' -f1)
+LINENUM=$(echo ${SEARCH_RESPONSE} | cut -d':' -f2)
+
+if [ "$SEARCH_EXITCODE" -eq 0 ]; then
+  ${EDITOR} +${LINENUM} "${FILENAME}"
+fi

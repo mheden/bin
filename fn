@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# prerequisites:
+# - fzf (https://github.com/junegunn/fzf.git)
+# - preview.sh (https://raw.githubusercontent.com/junegunn/fzf.vim/master/bin/preview.sh)
+#
+
+if [ -z "${NOTESPATH}" ]; then
+  echo Please set NOTESPATH
+  exit 1
+fi
+
+cd "${NOTESPATH}"
+FILENAME=$(ls *.md | fzf --preview "preview.sh {}")
+
+if [ "$?" -eq 0 ]; then
+  ${EDITOR} "${FILENAME}"
+fi
+

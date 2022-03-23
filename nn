@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ -z "${NOTESPATH}" ]; then
+  echo Please set NOTESPATH
+  exit
+fi
+
+TMPFILE="/tmp/NOTES_TMPFILE.md"
+
+echo "## " > ${TMPFILE}
+${EDITOR} ${TMPFILE}
+
+# try to construct a filename from the headline
+FILENAME=$(head -1 ${TMPFILE} | cut -d' ' -f2- | tr "[:upper:]" "[:lower:]" |  tr '\\/~' '   ').md
+# TODO: check if file exists
+cp --verbose -i "${TMPFILE}" "${NOTESPATH}/${FILENAME}"
