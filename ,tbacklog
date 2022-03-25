@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [[ "$#" -eq 0 ]]; then
+    task pm=backlog
+    exit
+fi
+
+task "$@" modify pm=backlog
+
+

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [[ "$#" -eq 0 ]]; then
+    task status=completed all
+    exit
+fi
+
+task "$@" modify pm=done
+task "$@" done
+

@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+"""
+A simple helper script for adding tasks to taskwarrior
+
+- Tags, projects, due dates etc. can be written anywhere in the string
+- Tags are prefixed with `+`
+- Projects are prefixed with `@`
+- Only one letter for due, prio, scheduled, wait
+
+Example:
+
+    ,tadd w:1d This d:1w is a p:H example +tag1 task @myproj +tag2 s:3d
+
+    will execute the following command:
+
+    task add +tag1 +tag2 project:myproj scheduled:3d due:1w priority:H wait:1d "This is a example task"
+"""
+import re
+import subprocess
+import sys
+
+TASK_BIN = "task"
+
+
+def parse_entry(entry, default):
+    data = default.copy()
+
+    if "modifiers" not in data:
+        data["modifiers"] = {}
+
+    tags = re.findall(r"(?:^|\s)\+(\S+)", entry)
+    projects = re.findall(r"(?:^|\s)@(\S+)", entry)
+    schedules = re.findall(r"(?:^|\s)s:(\S+)", entry)
+    dues = re.findall(r"(?:^|\s)d:(\S+)", entry)
+    waits = re.findall(r"(?:^|\s)w:(\S+)", entry)
+    prios = re.findall(r"(?:^|\s)p:([HML])", entry)
+
+    for i in tags:
+        entry = entry.replace("+" + i, "")
+    for i in projects:
+        entry = entry.replace("@" + i, "")
+    for i in dues:
+        entry = entry.replace("d:" + i, "")
+    for i in schedules:
+        entry = entry.replace("s:" + i, "")
+    for i in waits:
+        entry = entry.replace("w:" + i, "")
+    for i in prios:
+        entry = entry.replace("p:" + i, "")
+    for space in re.findall(r"\s{2,}", entry):
+        entry = entry.replace(space, " ")
+
+    data["description"] = entry.strip()
+    if len(tags) > 0:
+        data["tags"] = data.get("tags", []) + tags
+    if len(projects) > 0:
+        data["modifiers"]["project"] = projects[0]
+    if len(dues) > 0:
+        data["modifiers"]["due"] = dues[0]
+    if len(schedules) > 0:
+        data["modifiers"]["scheduled"] = schedules[0]
+    if len(waits):
+        data["modifiers"]["wait"] = waits[0]
+    if len(prios):
+        data["modifiers"]["priority"] = prios[0]
+    return data
+
+
+def main():
+    default = {
+        # 'tags': ['in']
+    }
+    cmd = [TASK_BIN, "add"]
+
+    entry = parse_entry(" ".join(sys.argv[1:]), default)
+
+    if "tags" in entry:
+        cmd += ["+%s" % tag for tag in entry["tags"]]
+    cmd += ["%s:%s" % (k, v) for k, v in entry["modifiers"].items()]
+    cmd.append(entry["description"])
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+    return output.stdout.decode("utf-8", "ignore")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print(f"usage: ,tadd ...")
+        sys.exit(1)
+    print(main())
+    sys.exit(0)

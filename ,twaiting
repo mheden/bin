@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [[ "$#" -eq 0 ]]; then
+    task pm=waiting
+    exit
+fi
+
+task "$@" modify pm=waiting
+
