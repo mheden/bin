@@ -1,0 +1,79 @@
+#!/usr/bin/python
+"""
+Add the following UDA to your .taskrc:
+
+    uda.pm.type=string
+    uda.pm.label=Kanban
+    uda.pm.values=backlog,todo,ongoing,waiting,done
+    uda.pm.default=backlog
+"""
+
+import subprocess
+import json
+import os
+import math
+from terminaltables import SingleTable
+
+BASE = "task rc.json.depends.array=no rc.verbose=off export".split(" ")
+
+
+COL_TODO = "\033[31m"
+COL_ONGOING = "\033[33m"
+COL_WAITING = "\033[34m"
+COL_RESET = "\033[0m"
+
+
+def get_data(filter):
+    command = BASE + [filter]
+    data = subprocess.check_output(command, stderr=subprocess.DEVNULL)
+    data = data.decode("utf-8")
+    return json.loads(data)
+
+
+def trim(string, length):
+    if len(string) > length:
+        return "%s…" % string[: length - 1]
+    return string
+
+
+def to_string(data, width=39):
+    result = []
+    for item in data:
+        s = "%s. %s" % (item["id"], item["description"])
+        result.append("%*s" % (-width, trim(s, width)))
+        extra = set()
+        if "project" in item:
+            project = "@%s" % item["project"]
+            extra.add(project)
+        if "tags" in item:
+            tags = set("+%s" % t for t in item["tags"])
+            extra |= tags
+        if extra:
+            result.append("%*s" % (width, " ".join(extra)))
+    if len(result) == 0:
+        result.append("%*s" % (width, ""))
+    return result
+
+
+def main():
+    width = os.get_terminal_size().columns
+    width = math.floor(width / 3) - 4
+
+    data = (
+        (
+            "%sTODO%s" % (COL_TODO, COL_RESET),
+            "%sONGOING%s" % (COL_ONGOING, COL_RESET),
+            "%sWAITING%s" % (COL_WAITING, COL_RESET),
+        ),
+        (
+            "\n".join(to_string(get_data("pm=todo"), width)),
+            "\n".join(to_string(get_data("pm=ongoing"), width)),
+            "\n".join(to_string(get_data("pm=waiting"), width)),
+        ),
+    )
+    table = SingleTable(data)
+    return table.table
+
+
+if __name__ == "__main__":
+    print(main())
