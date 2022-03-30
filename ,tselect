@@ -1,9 +1,15 @@
 #!/bin/bash
 
+if command -v task > /dev/null; then
+    TASK="task"
+else
+    TASK="wsl task"
+fi
+
 if [[ "$#" -eq 0 ]]; then
-    task pm=todo
+    $TASK pm=todo
     exit
 fi
 
-task "$@" modify pm=todo
+$TASK "$@" modify pm=todo
 

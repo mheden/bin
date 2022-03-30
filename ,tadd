@@ -15,11 +15,22 @@ Example:
 
     task add +tag1 +tag2 project:myproj scheduled:3d due:1w priority:H wait:1d "This is a example task"
 """
+import platform
 import re
 import subprocess
 import sys
 
-TASK_BIN = "task"
+BASE = "task"
+
+
+def is_linux():
+    return "Linux" in platform.uname().system
+
+
+def get_task_command():
+    if is_linux():
+        return BASE
+    return ["wsl"] + BASE
 
 
 def parse_entry(entry, default):
@@ -70,7 +81,7 @@ def main():
     default = {
         # 'tags': ['in']
     }
-    cmd = [TASK_BIN, "add"]
+    cmd = get_task_command() + ["add"]
 
     entry = parse_entry(" ".join(sys.argv[1:]), default)
 
@@ -84,7 +95,7 @@ def main():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(f"usage: ,tadd ...")
+        print("usage: ,tadd ...")
         sys.exit(1)
     print(main())
     sys.exit(0)

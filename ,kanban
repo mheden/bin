@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Add the following UDA to your .taskrc:
 
@@ -8,13 +8,14 @@ Add the following UDA to your .taskrc:
     uda.pm.default=backlog
 """
 
-import subprocess
 import json
-import os
 import math
+import os
+import platform
+import subprocess
 from terminaltables import SingleTable
 
-BASE = "task rc.json.depends.array=no rc.verbose=off export".split(" ")
+BASE = ["task", "rc.json.depends.array=no", "rc.verbose=off", "export"]
 
 
 COL_TODO = "\033[31m"
@@ -23,8 +24,18 @@ COL_WAITING = "\033[34m"
 COL_RESET = "\033[0m"
 
 
+def is_linux():
+    return "Linux" in platform.uname().system
+
+
+def get_task_command():
+    if is_linux():
+        return BASE
+    return ["wsl"] + BASE
+
+
 def get_data(filter):
-    command = BASE + [filter]
+    command = get_task_command() + [filter]
     data = subprocess.check_output(command, stderr=subprocess.DEVNULL)
     data = data.decode("utf-8")
     return json.loads(data)
